@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>表单注册</title>
+    <style>
+        form {
+            padding-top: 100px;
+            padding-left: 100px;
+        }
+
+        form>* {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        form-item input {
+            height: 32px;
+            border: none;
+            width: 500px;
+            box-shadow: 0 0 0 1px #e7e7e7 inset;
+            text-indent: 8px;
+        }
+
+        .pre_register,
+        .register {
+            display: inline-block;
+            width: 120px;
+            line-height: 40px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 20px;
+            text-decoration: none;
+            margin-left: 100px;
+        }
+
+        .register {
+            background-color: dodgerblue;
+            border: none;
+            outline: none;
+        }
+
+        .register:hover {
+            background-color: deepskyblue;
+        }
+
+        .disable {
+            background-color: #666;
+        }
+
+        .error::after {
+            position: absolute;
+            top: 50%;
+            transform: translate(8px, -50%);
+            color: rgb(224, 51, 51);
+            content: attr(data-error);
+        }
+
+        .correct::after {
+            position: absolute;
+            top: 50%;
+            transform: translate(8px, -50%);
+            color: rgb(95, 238, 95);
+            content: attr(data-correct);
+        }
+
+        form-item {
+            display: block;
+        }
+
+        #toast {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            z-index: 9;
+        }
+
+        #toast span {
+            padding: 8px 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 4px;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <form>
+        <form-item class="name">
+            用&ensp;户&ensp;名：<input type="text" placeholder="请输入用户名" name='name' required="true" />
+        </form-item>
+
+        <form-item class="pwd">
+            密&emsp;&emsp;码：<input type="password" placeholder="请输入密码" name='pwd' required="true" />
+        </form-item>
+
+        <form-item class="repwd">
+            确认密码：<input type="password" placeholder="请输入密码" required="true" />
+        </form-item>
+
+        <input type="submit" class="register" value="注册">
+    </form>
+</body>
+<script src="./js/jquery.js"></script>
+<script src="./js/extend.js"></script>
+<script>
+    // 1验证用户名
+    $('.name input').on('blur', function () {
+        // a.输入为空什么都不敢
+        if (!$(this).val()) {
+            return;
+        }
+        // b. 请求接口，验证用户名
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', 'http://127.0.0.1:8080/isUserNameExist?name=' + $(this).val());
+
+        // 要把用户名告诉服务器
+
+        xhr.send();
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                // console.log(xhr.responseText);
+                // 把JSON字符串转换成对象
+                var res = JSON.parse(xhr.responseText);
+                if (res.code === 200) {
+
+                } else {
+                    // 如果code 不是200，代表用户名不能用
+                    $('.name').getError(res.msg);
+                }
+            }
+        }
+
+    })
+    $('.repwd input').on('blur', function () {
+        // 2.验证两次密码是否一样
+        $('.repwd input').on('blur', function () {
+            var pwdData = $('.pwd input').val();
+            var rePwdData = $(this).val();
+            if (pwdData !== rePwdData) {
+                $('.repwd').getError('两次密码不一致！');
+            } else {
+                $('.repwd').getCorrect('两次密码一致');
+            }
+        })
+    })
+    // 监听表单的【提交】事件
+    $('form').on('submit', function () {
+        // 2.阻止submit默认刷新页面行为
+        window.event.preventDefault();
+        // 3.查看表单是否有错误，提示并判断是否进行下一步操作
+        if (!$(this).checkForm()) {
+            $.fn.toast('请确保表单正确！hahaha');
+        } else {
+            // 4.创建一个 【XMLHttpRequest】 实例;
+            var xhr = new XMLHttpRequest();
+            // 5. 准备打开一个请求地址
+            xhr.open('post', 'http://127.0.0.1:8080/doRegister');
+            // 6.post 要设置一个请求头，设置content-type 为 application/x-www-form-urlencoded
+            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+            // 7.格式化表单的参数
+            var params = serialize($('form'));
+            console.log(params);
+
+            // 8.post 要传参要按 键=值&键=值
+            xhr.send(params);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // console.log(xhr.responseText);
+                    // 转换成对象
+                    var res = JSON.parse(xhr.responseText);
+
+                    // 
+                    $.fn.toast(res.msg);
+                }
+            }
+        }
+    })
+</script>
+
+</html>
